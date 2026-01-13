@@ -1,115 +1,121 @@
 import { useState } from "react";
 
 export default function App() {
+  const [input, setInput] = useState("");
   const [prompt, setPrompt] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [image, setImage] = useState<string | null>(null);
-  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
 
-  const generateImage = async () => {
-    setLoading(true);
-    setError("");
-    setImage(null);
-
-    try {
-      const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt:
-            prompt ||
-            "Professional product photo, studio lighting, clean background, ecommerce style",
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Generate failed");
-      }
-
-      setImage(`data:image/png;base64,${data.image}`);
-    } catch (err: any) {
-      setError(err.message || "Gagal generate gambar");
-    } finally {
-      setLoading(false);
+  const generatePrompt = () => {
+    if (!input.trim()) {
+      alert("Sila masukkan nama produk");
+      return;
     }
+
+    const result = `Realistic studio product photo of ${input},
+white background, soft studio lighting,
+commercial photography, e-commerce style,
+high detail, sharp focus, DSLR quality,
+minimal shadow, professional product shoot`;
+
+    setPrompt(result);
+    setCopied(false);
+  };
+
+  const copyPrompt = async () => {
+    await navigator.clipboard.writeText(prompt);
+    setCopied(true);
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        background: "#f3f3f3",
-        fontFamily: "sans-serif",
-      }}
-    >
-      <div
-        style={{
-          background: "#fff",
-          padding: 24,
-          borderRadius: 12,
-          width: 320,
-          boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-          textAlign: "center",
-        }}
-      >
-        <h2>AI Product Studio</h2>
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <h1 style={styles.title}>AI Product Studio</h1>
 
         <textarea
-          placeholder="Contoh: Produk botol air estetik, studio lighting"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          style={{
-            width: "100%",
-            minHeight: 80,
-            marginBottom: 12,
-            padding: 8,
-          }}
+          placeholder="Contoh: air gula botol"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          style={styles.textarea}
         />
 
-        <button
-          onClick={generateImage}
-          disabled={loading}
-          style={{
-            width: "100%",
-            padding: 12,
-            border: "none",
-            borderRadius: 8,
-            background: "linear-gradient(90deg,#ff5ec4,#7b6cff)",
-            color: "#fff",
-            fontWeight: "bold",
-            cursor: "pointer",
-          }}
-        >
-          {loading ? "Generating..." : "✨ Generate Magic"}
+        <button style={styles.button} onClick={generatePrompt}>
+          ✨ Generate Magic
         </button>
 
-        {error && (
-          <p style={{ color: "red", marginTop: 12 }}>{error}</p>
+        {prompt && (
+          <>
+            <textarea
+              value={prompt}
+              readOnly
+              style={{ ...styles.textarea, marginTop: 12 }}
+            />
+
+            <button style={styles.copyBtn} onClick={copyPrompt}>
+              {copied ? "✅ Copied" : "📋 Copy Prompt"}
+            </button>
+          </>
         )}
 
-        {image && (
-          <img
-            src={image}
-            alt="Generated"
-            style={{
-              width: "100%",
-              marginTop: 16,
-              borderRadius: 8,
-            }}
-          />
-        )}
-
-        <p style={{ fontSize: 12, marginTop: 16, color: "#888" }}>
-          Powered by Google Imagen
-        </p>
+        <p style={styles.footer}>Gunakan prompt ini di mana-mana AI Image Generator</p>
       </div>
     </div>
   );
 }
+
+const styles: any = {
+  container: {
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#f2f2f2",
+    padding: 16,
+  },
+  card: {
+    background: "#fff",
+    padding: 20,
+    borderRadius: 12,
+    width: "100%",
+    maxWidth: 420,
+    boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+  },
+  title: {
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  textarea: {
+    width: "100%",
+    minHeight: 80,
+    padding: 10,
+    borderRadius: 8,
+    border: "1px solid #ccc",
+    fontSize: 14,
+    resize: "vertical",
+  },
+  button: {
+    width: "100%",
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 10,
+    border: "none",
+    color: "#fff",
+    fontSize: 16,
+    background: "linear-gradient(90deg,#ff5acd,#7b6cff)",
+    cursor: "pointer",
+  },
+  copyBtn: {
+    width: "100%",
+    marginTop: 10,
+    padding: 10,
+    borderRadius: 8,
+    border: "1px solid #ddd",
+    background: "#fafafa",
+    cursor: "pointer",
+  },
+  footer: {
+    marginTop: 12,
+    fontSize: 12,
+    color: "#777",
+    textAlign: "center",
+  },
+};
