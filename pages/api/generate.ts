@@ -9,17 +9,14 @@ export default async function handler(
   }
 
   try {
-    const { imageBase64 } = req.body;
+    const { prompt } = req.body;
 
-    if (!imageBase64) {
-      return res.status(400).json({ error: "Image missing" });
+    if (!prompt) {
+      return res.status(400).json({ error: "Prompt required" });
     }
 
-    const prompt =
-      "Generate a professional ecommerce product photo, clean white background, studio lighting, realistic shadow, high quality";
-
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" +
+      "https://generativelanguage.googleapis.com/v1/models/imagen-3.0-generate-002:generateImages?key=" +
         process.env.GEMINI_API_KEY,
       {
         method: "POST",
@@ -27,27 +24,26 @@ export default async function handler(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: prompt },
-                {
-                  inlineData: {
-                    mimeType: "image/jpeg",
-                    data: imageBase64,
-                  },
-                },
-              ],
-            },
-          ],
+          prompt,
+          numberOfImages: 1,
         }),
       }
     );
 
     const data = await response.json();
-    return res.status(200).json(data);
+
+    const imageBase64 =
+      data?.images?.[0]?.bytesBase64Encoded;
+
+    if (!imageBase64) {
+      return res.status(500).json({ error: "No image generated" });
+    }
+
+    res.status(200).json({
+      image: imageBase64,
+    });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: "Gemini request failed" });
+    res.status(500).json({ error: "Imagen failed" });
   }
 }
