@@ -1,79 +1,105 @@
 import { useState } from "react";
 
 export default function App() {
-  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [resultImage, setResultImage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
-    if (!file) return;
-
     setLoading(true);
-    setError(null);
+    setError("");
     setResultImage(null);
 
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      try {
-        const base64 = (reader.result as string).split(",")[1];
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt:
+            "Professional ecommerce product photo, studio lighting, clean white background, realistic shadow, ultra high quality",
+        }),
+      });
 
-        const res = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageBase64: base64 }),
-        });
+      const data = await res.json();
 
-        const data = await res.json();
-
-        const img =
-          data?.candidates?.[0]?.content?.parts?.find(
-            (p: any) => p.inlineData
-          )?.inlineData?.data;
-
-        if (!img) {
-          throw new Error("No image returned");
-        }
-
-        setResultImage(`data:image/jpeg;base64,${img}`);
-      } catch (e) {
-        setError("Gagal generate gambar");
-      } finally {
-        setLoading(false);
+      if (!res.ok || !data.image) {
+        throw new Error("Gagal generate gambar");
       }
-    };
 
-    reader.readAsDataURL(file);
+      setResultImage(`data:image/png;base64,${data.image}`);
+    } catch (err) {
+      setError("Gagal generate gambar");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div style={{ padding: 20, maxWidth: 400 }}>
-      <h2>AI Product Studio</h2>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        background: "#f5f5f5",
+        padding: 20,
+      }}
+    >
+      <div
+        style={{
+          background: "#fff",
+          padding: 30,
+          borderRadius: 12,
+          width: "100%",
+          maxWidth: 420,
+          textAlign: "center",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+        }}
+      >
+        <h1>AI Product Studio</h1>
 
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => setFile(e.target.files?.[0] || null)}
-      />
+        <button
+          onClick={handleGenerate}
+          disabled={loading}
+          style={{
+            padding: "12px 20px",
+            borderRadius: 8,
+            border: "none",
+            background: "linear-gradient(90deg,#ff4ecd,#7c5cff)",
+            color: "#fff",
+            fontSize: 16,
+            cursor: "pointer",
+            width: "100%",
+            marginTop: 10,
+          }}
+        >
+          {loading ? "Generating..." : "✨ Generate Magic"}
+        </button>
 
-      <br />
-      <br />
+        {error && (
+          <p style={{ color: "red", marginTop: 15 }}>{error}</p>
+        )}
 
-      <button onClick={handleGenerate} disabled={loading}>
-        {loading ? "Generating..." : "Generate Magic"}
-      </button>
+        {resultImage && (
+          <div style={{ marginTop: 20 }}>
+            <img
+              src={resultImage}
+              alt="Generated"
+              style={{
+                width: "100%",
+                borderRadius: 10,
+                boxShadow: "0 5px 20px rgba(0,0,0,0.15)",
+              }}
+            />
+          </div>
+        )}
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {resultImage && (
-        <>
-          <h3>Hasil AI:</h3>
-          <img
-            src={resultImage}
-            style={{ width: "100%", borderRadius: 8 }}
-          />
-        </>
-      )}
+        <p style={{ marginTop: 15, fontSize: 12, color: "#999" }}>
+          Powered by Google Imagen
+        </p>
+      </div>
     </div>
   );
 }
