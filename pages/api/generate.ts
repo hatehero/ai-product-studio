@@ -8,30 +8,26 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  const { prompt } = req.body;
+
+  if (!prompt) {
+    return res.status(400).json({ error: "Prompt is required" });
+  }
+
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-      return res.status(500).json({ error: "API key not found" });
-    }
-
-    const { prompt } = req.body;
-
-    if (!prompt) {
-      return res.status(400).json({ error: "Prompt required" });
-    }
-
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:generateImages?key=" +
-        apiKey,
+      "https://generativelanguage.googleapis.com/v1/models/imagen-3.0-generate-002:generateImages?key=" +
+        process.env.GEMINI_API_KEY,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          prompt,
-          numberOfImages: 1,
+          prompt: {
+            text: prompt,
+          },
+          imageCount: 1,
         }),
       }
     );
@@ -39,12 +35,12 @@ export default async function handler(
     const data = await response.json();
 
     if (!response.ok) {
-      console.error(data);
-      return res.status(500).json({ error: "Imagen API failed" });
+      console.error("Imagen API error:", data);
+      return res.status(500).json({ error: "Imagen API error", data });
     }
 
     const imageBase64 =
-      data.images?.[0]?.bytesBase64Encoded || null;
+      data?.images?.[0]?.bytesBase64Encoded;
 
     if (!imageBase64) {
       return res.status(500).json({ error: "No image generated" });
@@ -54,7 +50,7 @@ export default async function handler(
       image: imageBase64,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Server error:", err);
     return res.status(500).json({ error: "Server error" });
   }
 }
