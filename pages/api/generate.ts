@@ -10,8 +10,8 @@ export default async function handler(
 
   const { prompt } = req.body;
 
-  if (!prompt || typeof prompt !== "string") {
-    return res.status(400).json({ error: "Prompt required" });
+  if (!prompt || prompt.length < 5) {
+    return res.status(400).json({ error: "Prompt terlalu pendek" });
   }
 
   try {
@@ -25,22 +25,29 @@ export default async function handler(
         },
         body: JSON.stringify({
           inputs: prompt,
+          options: {
+            wait_for_model: true, // ❗ penting untuk HF free
+          },
         }),
       }
     );
 
+    // ❌ HF bagi error JSON (model loading / rate limit)
     if (!hfRes.ok) {
-      const text = await hfRes.text();
-      return res.status(500).json({ error: text });
+      const errText = await hfRes.text();
+      console.error("HF error:", errText);
+      return res.status(500).json({ error: "HF generate gagal" });
     }
 
-    const buffer = Buffer.from(await hfRes.arrayBuffer());
-    const base64 = buffer.toString("base64");
+    // ✅ HF image response = binary
+    const arrayBuffer = await hfRes.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
 
     res.status(200).json({
       image: `data:image/png;base64,${base64}`,
     });
-  } catch (err: any) {
-    res.status(500).json({ error: "Hugging Face request failed" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 }
