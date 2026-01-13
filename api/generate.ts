@@ -1,45 +1,46 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+const generate = async () => {
+  if (!file) return alert("Upload gambar dulu");
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  try {
-    const { imageBase64 } = req.body;
+  const img = new Image();
+  img.src = URL.createObjectURL(file);
 
-    if (!imageBase64) {
-      return res.status(400).json({ error: "image required" });
+  img.onload = async () => {
+    const canvas = document.createElement("canvas");
+    const maxSize = 512;
+
+    let w = img.width;
+    let h = img.height;
+
+    if (w > h) {
+      if (w > maxSize) {
+        h *= maxSize / w;
+        w = maxSize;
+      }
+    } else {
+      if (h > maxSize) {
+        w *= maxSize / h;
+        h = maxSize;
+      }
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `
-Analyze this product image and generate:
-1. A professional product description
-2. A detailed AI image generation prompt
-`,
-                },
-                {
-                  inlineData: {
-                    mimeType: "image/jpeg",
-                    data: imageBase64,
-                  },
-                },
-              ],
-            },
-          ],
-        }),
-      }
-    );
+    canvas.width = w;
+    canvas.height = h;
 
-    const data = await response.json();
-    res.status(200).json(data);
-  } catch (e: any) {
-    res.status(500).json({ error: e.message });
-  }
-}
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, 0, 0, w, h);
+
+    const base64 = canvas
+      .toDataURL("image/jpeg", 0.7)
+      .split(",")[1];
+
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageBase64: base64 }),
+    });
+
+    const json = await res.json();
+    console.log(json);
+    alert("CHECK CONSOLE");
+  };
+};
