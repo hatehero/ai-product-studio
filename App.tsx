@@ -1,64 +1,59 @@
-import React from "react";
+// App.tsx
+import { useState } from "react";
 
 export default function App() {
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+
+  const handleGenerate = async () => {
+    if (!file) return alert("Upload gambar dulu");
+
+    setLoading(true);
+    setResult(null);
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = (reader.result as string).split(",")[1];
+
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt:
+            "Generate gambar promosi produk yang cantik, studio lighting, background clean",
+          imageBase64: base64,
+        }),
+      });
+
+      const data = await res.json();
+      setResult(data);
+      setLoading(false);
+    };
+
+    reader.readAsDataURL(file);
+  };
+
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontFamily: "system-ui",
-      background: "#f5f5f5"
-    }}>
-      <div style={{
-        background: "white",
-        padding: "32px",
-        borderRadius: "16px",
-        width: "100%",
-        maxWidth: "420px",
-        boxShadow: "0 10px 30px rgba(0,0,0,.1)",
-        textAlign: "center"
-      }}>
-        <h1 style={{ fontSize: "24px", fontWeight: "700" }}>
-          AI Product Studio
-        </h1>
+    <div style={{ padding: 30, maxWidth: 500, margin: "auto" }}>
+      <h1>AI Product Studio</h1>
 
-        <p style={{ marginTop: "8px", color: "#666" }}>
-          Generate gambar produk dengan AI
-        </p>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => setFile(e.target.files?.[0] || null)}
+      />
 
-        <div style={{
-          marginTop: "24px",
-          padding: "24px",
-          border: "2px dashed #ddd",
-          borderRadius: "12px"
-        }}>
-          <p>📸 Upload gambar produk</p>
-          <input type="file" style={{ marginTop: "12px" }} />
-        </div>
+      <br />
+      <br />
 
-        <button style={{
-          marginTop: "24px",
-          width: "100%",
-          padding: "14px",
-          borderRadius: "12px",
-          border: "none",
-          background: "linear-gradient(135deg,#ec4899,#8b5cf6)",
-          color: "white",
-          fontWeight: "700",
-          fontSize: "16px"
-        }}>
-          ✨ GENERATE MAGIC
-        </button>
+      <button onClick={handleGenerate} disabled={loading}>
+        {loading ? "Generating..." : "✨ Generate Magic"}
+      </button>
 
-        <p style={{
-          marginTop: "16px",
-          fontSize: "12px",
-          color: "#aaa"
-        }}>
-          Powered by Gemini AI
-        </p>
-      </div>
+      <pre style={{ whiteSpace: "pre-wrap", marginTop: 20 }}>
+        {result && JSON.stringify(result, null, 2)}
+      </pre>
     </div>
   );
 }
