@@ -1,17 +1,24 @@
-export default async function handler(req, res) {
+// api/generate.ts
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
   try {
-    // Ambil data dari frontend
     const { prompt, imageBase64 } = req.body || {};
 
-    // Prompt default (WAJIB ADA)
-    const finalPrompt =
-      prompt ||
-      "Generate a clean professional product photo, studio lighting, realistic shadows, high quality, ecommerce style";
+    if (!prompt) {
+      return res.status(400).json({ error: "prompt required" });
+    }
 
-    // Call Gemini API
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: "GEMINI_API_KEY missing" });
+    }
+
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-image:generateContent?key=" +
-        process.env.GEMINI_API_KEY,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: {
@@ -21,7 +28,7 @@ export default async function handler(req, res) {
           contents: [
             {
               parts: [
-                { text: finalPrompt },
+                { text: prompt },
                 imageBase64
                   ? {
                       inlineData: {
@@ -39,10 +46,18 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // Hantar balik ke frontend
+    if (!response.ok) {
+      return res.status(500).json({
+        error: "Gemini API error",
+        details: data,
+      });
+    }
+
     return res.status(200).json(data);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "generate failed" });
+  } catch (err: any) {
+    return res.status(500).json({
+      error: "Server error",
+      message: err?.message,
+    });
   }
 }
