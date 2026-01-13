@@ -1,16 +1,11 @@
-// App.tsx
 import { useState } from "react";
 
 export default function App() {
   const [file, setFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState("");
 
-  const handleGenerate = async () => {
+  const generate = async () => {
     if (!file) return alert("Upload gambar dulu");
-
-    setLoading(true);
-    setResult(null);
 
     const reader = new FileReader();
     reader.onloadend = async () => {
@@ -19,41 +14,22 @@ export default function App() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt:
-            "Generate gambar promosi produk yang cantik, studio lighting, background clean",
-          imageBase64: base64,
-        }),
+        body: JSON.stringify({ imageBase64: base64 }),
       });
 
-      const data = await res.json();
-      setResult(data);
-      setLoading(false);
+      const json = await res.json();
+      setResult(JSON.stringify(json, null, 2));
     };
-
     reader.readAsDataURL(file);
   };
 
   return (
-    <div style={{ padding: 30, maxWidth: 500, margin: "auto" }}>
-      <h1>AI Product Studio</h1>
-
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => setFile(e.target.files?.[0] || null)}
-      />
-
-      <br />
-      <br />
-
-      <button onClick={handleGenerate} disabled={loading}>
-        {loading ? "Generating..." : "✨ Generate Magic"}
-      </button>
-
-      <pre style={{ whiteSpace: "pre-wrap", marginTop: 20 }}>
-        {result && JSON.stringify(result, null, 2)}
-      </pre>
+    <div style={{ padding: 20 }}>
+      <h2>AI Product Studio</h2>
+      <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+      <br /><br />
+      <button onClick={generate}>Generate Magic</button>
+      <pre>{result}</pre>
     </div>
   );
 }
