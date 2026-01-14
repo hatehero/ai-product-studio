@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY!;
-// ✅ URL yang telah dibetulkan (v1beta dan susunan model yang tepat)
-const MODEL_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+// ✅ Gunakan URL v1 (bukan v1beta) untuk kestabilan, dan pastikan nama model tepat
+const MODEL_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 async function callGemini(userPrompt: string): Promise<string> {
   try {
@@ -16,14 +16,14 @@ async function callGemini(userPrompt: string): Promise<string> {
           {
             parts: [
               {
-                text: `Bina 5 prompt sudut kamera (camera angle) berbeza dalam Bahasa Inggeris untuk AI image generation berdasarkan tema ini: ${userPrompt}. Berikan senarai nombor 1 hingga 5 sahaja tanpa sebarang pengenalan atau ulasan tambahan.`
+                text: `Bina 5 prompt sudut kamera (camera angle) berbeza dalam Bahasa Inggeris untuk AI image generation berdasarkan tema ini: ${userPrompt}. Berikan senarai nombor 1 hingga 5 sahaja.`
               }
             ]
           }
         ],
         generationConfig: {
-          maxOutputTokens: 800,
-          temperature: 1.0, // Memberi lebih variasi pada sudut kamera
+          maxOutputTokens: 1000,
+          temperature: 0.7,
         }
       }),
     });
@@ -31,16 +31,15 @@ async function callGemini(userPrompt: string): Promise<string> {
     const data = await response.json();
 
     if (!response.ok) {
-      // Menangkap mesej ralat spesifik daripada Google jika ada (seperti ralat model tidak dijumpai)
-      throw new Error(data.error?.message || `Ralat API Gemini (${response.status})`);
+      // Jika masih ralat, kita paparkan mesej dari Google untuk debug
+      throw new Error(data.error?.message || `Ralat API: ${response.status}`);
     }
 
-    // ✅ Ekstrak teks mengikut struktur data Google Gemini
     if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
       return data.candidates[0].content.parts[0].text.trim();
     }
 
-    throw new Error("Gemini tidak memulangkan sebarang teks.");
+    throw new Error("Gemini tidak memberikan jawapan.");
   } catch (error: any) {
     throw new Error(error.message || "Gagal menghubungi Google AI Studio");
   }
@@ -56,7 +55,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const result = await callGemini(prompt);
     res.status(200).json({ result });
   } catch (e: any) {
-    // Memastikan ralat dipaparkan dengan jelas di UI
     res.status(500).json({ error: e.message });
   }
 }
