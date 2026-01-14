@@ -2,13 +2,13 @@ import { useState } from "react";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
-  const [result, setResult] = useState<string[]>([]);
+  const [output, setOutput] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const generate = async () => {
+  async function generate() {
     setError("");
-    setResult([]);
+    setOutput("");
 
     if (!prompt.trim()) {
       setError("Prompt kosong");
@@ -27,51 +27,53 @@ export default function Home() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "API error");
+        setError(data?.error || "Ralat tidak diketahui");
+      } else {
+        setOutput(data.result);
       }
-
-      setResult(data.angles);
-    } catch (err: any) {
-      setError(err.message || "Gagal jana prompt");
-    } finally {
-      setLoading(false);
+    } catch (e: any) {
+      setError("Client error: " + e.message);
     }
-  };
+
+    setLoading(false);
+  }
 
   return (
-    <main style={{ maxWidth: 600, margin: "40px auto", fontFamily: "serif" }}>
+    <main style={{ padding: 24, maxWidth: 720, margin: "auto" }}>
       <h1>📸 AI Prompt Studio</h1>
 
       <textarea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
+        rows={5}
+        style={{ width: "100%", padding: 12 }}
         placeholder="Contoh: wanita jual jam di pasar"
-        style={{ width: "100%", height: 120, padding: 10 }}
       />
 
-      <button
-        onClick={generate}
-        disabled={loading}
-        style={{ marginTop: 10, padding: 10, width: "100%" }}
-      >
+      <br /><br />
+
+      <button onClick={generate} disabled={loading}>
         {loading ? "Menjana..." : "Generate 5 Angle Prompt"}
       </button>
 
+      <br /><br />
+
       {error && (
-        <p style={{ color: "red", marginTop: 15 }}>❌ {error}</p>
+        <div style={{ color: "red", whiteSpace: "pre-wrap" }}>
+          ❌ {error}
+        </div>
       )}
 
-      {result.length > 0 && (
-        <div style={{ marginTop: 20 }}>
-          <h3>Hasil Prompt:</h3>
-          <ol>
-            {result.map((r, i) => (
-              <li key={i} style={{ marginBottom: 10 }}>
-                {r}
-              </li>
-            ))}
-          </ol>
-        </div>
+      {output && (
+        <pre
+          style={{
+            background: "#f4f4f4",
+            padding: 16,
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {output}
+        </pre>
       )}
     </main>
   );
