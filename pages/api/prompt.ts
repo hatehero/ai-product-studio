@@ -1,15 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 const HF_API_KEY = process.env.HF_API_KEY!;
-// ✅ URL BARU: Menggunakan router.huggingface.co mengikut ralat yang anda terima
-const MODEL_URL =
-  "https://router.huggingface.co/hf-inference/models/mistralai/Mistral-7B-Instruct-v0.2";
+// ✅ URL telah dibetulkan mengikut format router terkini
+const MODEL_URL = "https://router.huggingface.co/hf-inference/v1/chat/completions";
 
 async function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-async function callHF(prompt: string, retries = 5): Promise<string> {
+async function callHF(userPrompt: string, retries = 5): Promise<string> {
   try {
     const res = await fetch(MODEL_URL, {
       method: "POST",
@@ -18,39 +17,43 @@ async function callHF(prompt: string, retries = 5): Promise<string> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        inputs: `<s>[INST] Bina 5 prompt sudut kamera (camera angle) berbeza dalam Bahasa Inggeris untuk AI image generation berdasarkan tema ini: ${prompt}. Sediakan jawapan dalam format senarai nombor sahaja. [/INST]`,
-        parameters: {
-          max_new_tokens: 500,
-          return_full_text: false,
-        },
+        model: "mistralai/Mistral-7B-Instruct-v0.2", // ✅ Nyatakan model di sini
+        messages: [
+          {
+            role: "user",
+            content: `Bina 5 prompt sudut kamera (camera angle) berbeza dalam Bahasa Inggeris untuk AI image generation berdasarkan tema ini: ${userPrompt}. Berikan senarai 1 hingga 5 sahaja.`
+          }
+        ],
+        max_tokens: 500,
       }),
     });
 
+    // Semak jika respons bukan JSON (seperti kes 'Not Found')
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      const textError = await res.text();
+      throw new Error(`API memulangkan format bukan JSON: ${textError}`);
+    }
+
     const data = await res.json();
 
-    // ⏳ PENGENDALIAN LOADING (Hugging Face mungkin ambil masa bangunkan model)
-    if (data?.error && (data.error.includes("loading") || data.error.includes("currently loading"))) {
-      if (retries <= 0) throw new Error("Model sedang dimuatkan. Sila tunggu seminit dan cuba lagi.");
-      await sleep(10000); // Tunggu 10 saat
-      return callHF(prompt, retries - 1);
+    // ⏳ Pengendalian Loading
+    if (data?.error && data.error.includes("loading")) {
+      if (retries <= 0) throw new Error("Model masih loading selepas beberapa cubaan.");
+      await sleep(10000); 
+      return callHF(userPrompt, retries - 1);
     }
 
-    // ✅ EKSTRAK TEKS JIKA BERBENTUK ARRAY
-    if (Array.isArray(data) && data[0]?.generated_text) {
-      return data[0].generated_text.trim();
-    }
-    
-    // ✅ EKSTRAK TEKS JIKA BERBENTUK OBJEK TERUS
-    if (data?.generated_text) {
-      return data.generated_text.trim();
+    // ✅ Ekstrak data menggunakan format Chat Completions
+    if (data?.choices && data.choices[0]?.message?.content) {
+      return data.choices[0].message.content.trim();
     }
 
-    // Jika ada ralat spesifik dari API
     if (data?.error) {
-      throw new Error(data.error);
+      throw new Error(data.error.message || data.error);
     }
 
-    throw new Error("Gagal menerima respons teks yang sah.");
+    throw new Error("Gagal memproses respons daripada AI.");
   } catch (error: any) {
     throw new Error(error.message || "Ralat sambungan API");
   }
@@ -65,7 +68,7 @@ export default async function handler(
 
   const { prompt } = req.body;
   if (!prompt)
-    return res.status(400).json({ error: "Prompt tidak boleh kosong" });
+    return res.status(400).json({ error: "Prompt kosong" });
 
   try {
     const result = await callHF(prompt);
