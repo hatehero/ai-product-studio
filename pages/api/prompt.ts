@@ -8,68 +8,64 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { text } = req.body;
+  const { idea } = req.body;
 
-  if (!text || typeof text !== "string") {
-    return res.status(400).json({ error: "Input tidak sah" });
-  }
-
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: "GEMINI_API_KEY tiada" });
+  if (!idea || idea.trim().length < 3) {
+    return res.status(400).json({ error: "Idea terlalu pendek" });
   }
 
   try {
-    const prompt = `
-Anda ialah AI prompt engineer profesional.
-
-Daripada ayat ini:
-"${text}"
-
-Hasilkan 5 prompt visual berbeza sudut kamera
-untuk AI image/video generation.
-
-FORMAT WAJIB:
-1. ...
-2. ...
-3. ...
-4. ...
-5. ...
-`;
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+    const hfRes = await fetch(
+      "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${process.env.HF_API_KEY}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: prompt }]
-            }
-          ]
-        })
+          inputs: `
+Anda adalah AI pakar prompt gambar & video pemasaran.
+
+Tugas:
+Hasilkan 5 PROMPT BERBEZA (ANGLE BERBEZA) untuk idea berikut:
+
+"${idea}"
+
+Format wajib:
+1. Angle 1: ...
+2. Angle 2: ...
+3. Angle 3: ...
+4. Angle 4: ...
+5. Angle 5: ...
+
+Gunakan bahasa ringkas, jelas, sesuai untuk AI image/video.
+`,
+          parameters: {
+            max_new_tokens: 300,
+            temperature: 0.7,
+            return_full_text: false,
+          },
+        }),
       }
     );
 
-    const data = await response.json();
+    const data = await hfRes.json();
 
-    // 🔥 CARA PALING SELAMAT PARSE GEMINI
-    const output =
-      data?.candidates?.[0]?.content?.parts
-        ?.map((p: any) => p.text)
-        ?.join("\n");
-
-    if (!output) {
-      return res.status(200).json({
-        result: "❌ Gemini API balas kosong (Google side). Cuba ayat lain."
+    if (!Array.isArray(data) || !data[0]?.generated_text) {
+      return res.status(500).json({
+        error: "Hugging Face tidak pulangkan teks",
+        raw: data,
       });
     }
 
-    return res.status(200).json({ result: output });
+    res.status(200).json({
+      result: data[0].generated_text,
+    });
   } catch (err: any) {
-    return res.status(500).json({
-      error: err.message || "Server error"
+    res.status(500).json({
+      error: "Gagal hubungi Hugging Face",
+      message: err.message,
     });
   }
 }
