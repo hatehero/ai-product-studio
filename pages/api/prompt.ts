@@ -1,7 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -10,20 +8,16 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  if (!GEMINI_API_KEY) {
-    return res.status(500).json({ error: "GEMINI_API_KEY tidak dijumpai" });
-  }
-
   const { prompt } = req.body;
 
-  if (!prompt || !prompt.trim()) {
+  if (!prompt || prompt.trim().length === 0) {
     return res.status(400).json({ error: "Prompt kosong" });
   }
 
   try {
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=" +
-        GEMINI_API_KEY,
+      "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=" +
+        process.env.GEMINI_API_KEY,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -33,18 +27,28 @@ export default async function handler(
               parts: [
                 {
                   text: `
-Berdasarkan ayat berikut:
-"${prompt}"
+Tugas anda:
+Berdasarkan ayat ini: "${prompt}"
 
-Hasilkan 5 prompt AI gambar berbeza (angle kamera berbeza).
-Setiap satu ayat penuh, jelas, realistik, gaya studio / live / katalog.
-Jangan nombor, jangan bullet. Pisahkan setiap prompt dengan baris baru.
-`,
-                },
-              ],
-            },
-          ],
-        }),
+Hasilkan 5 PROMPT GAMBAR berbeza untuk AI image generator.
+Setiap prompt:
+- Angle kamera berbeza
+- Gaya profesional
+- Sesuai untuk iklan / video 8 saat
+- Ayat penuh (English)
+
+Format jawapan:
+1. ...
+2. ...
+3. ...
+4. ...
+5. ...
+`
+                }
+              ]
+            }
+          ]
+        })
       }
     );
 
@@ -59,14 +63,8 @@ Jangan nombor, jangan bullet. Pisahkan setiap prompt dengan baris baru.
         .json({ error: "Gemini tidak pulangkan teks" });
     }
 
-    const angles = text
-      .split("\n")
-      .map((t: string) => t.trim())
-      .filter(Boolean)
-      .slice(0, 5);
-
-    return res.status(200).json({ angles });
-  } catch (err) {
-    return res.status(500).json({ error: "Gagal hubungi Gemini API" });
+    return res.status(200).json({ result: text });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
   }
 }
