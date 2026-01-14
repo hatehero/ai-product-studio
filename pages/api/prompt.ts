@@ -10,25 +10,26 @@ export default async function handler(
 
   const { text } = req.body;
 
-  if (!text) {
-    return res.status(400).json({ error: "Text kosong" });
+  if (!text || typeof text !== "string") {
+    return res.status(400).json({ error: "Input tidak sah" });
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: "GEMINI_API_KEY tiada" });
   }
 
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const systemPrompt = `
+Anda ialah AI prompt engineer profesional.
 
-    if (!apiKey) {
-      return res.status(500).json({ error: "GEMINI_API_KEY tiada" });
-    }
-
-    const prompt = `
-Anda ialah AI prompt engineer.
-Daripada ayat ini: "${text}"
+Daripada ayat ringkas ini:
+"${text}"
 
 Hasilkan 5 prompt visual BERBEZA sudut kamera
-Untuk AI image/video generation.
+sesuai untuk AI image / video generation.
 
-Format:
+WAJIB ikut format bernombor:
 1. ...
 2. ...
 3. ...
@@ -37,14 +38,15 @@ Format:
 `;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [
             {
-              parts: [{ text: prompt }]
+              role: "user",
+              parts: [{ text: systemPrompt }]
             }
           ]
         })
@@ -53,11 +55,26 @@ Format:
 
     const data = await response.json();
 
-    const output =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text || "Tiada output";
+    // 🔥 PARSE GEMINI DENGAN SELAMAT
+    let output = "";
 
-    res.status(200).json({ result: output });
+    if (data?.candidates?.length) {
+      const parts = data.candidates[0]?.content?.parts;
+      if (Array.isArray(parts)) {
+        output = parts.map((p: any) => p.text).join("\n");
+      }
+    }
+
+    if (!output) {
+      return res.status(200).json({
+        result: "❌ Gemini tidak pulangkan teks. Cuba ayat lain."
+      });
+    }
+
+    return res.status(200).json({ result: output });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Server error" });
+    return res.status(500).json({
+      error: err.message || "Server error"
+    });
   }
 }
