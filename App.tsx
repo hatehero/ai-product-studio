@@ -2,14 +2,14 @@ import { useState } from "react";
 
 export default function App() {
   const [input, setInput] = useState("");
-  const [prompts, setPrompts] = useState<any[] | null>(null);
+  const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const generatePrompt = async () => {
     setLoading(true);
     setError("");
-    setPrompts(null);
+    setResult("");
 
     try {
       const res = await fetch("/api/prompt", {
@@ -19,67 +19,48 @@ export default function App() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed");
+      if (!res.ok) throw new Error(data.error);
 
-      setPrompts(data.prompts);
-    } catch (e) {
-      setError("Failed");
+      setResult(data.result);
+    } catch (e: any) {
+      setError(e.message || "Failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 700, margin: "0 auto" }}>
+    <div style={{ padding: 24, maxWidth: 800, margin: "0 auto" }}>
       <h1>AI Product Prompt Studio</h1>
 
       <textarea
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        placeholder="contoh: akak melayu jual gelang dalam live"
-        style={{
-          width: "100%",
-          minHeight: 100,
-          padding: 12,
-          fontSize: 16,
-        }}
+        placeholder="contoh: akak jual tudung live tiktok"
+        style={{ width: "100%", minHeight: 100, padding: 12 }}
       />
 
       <button
         onClick={generatePrompt}
         disabled={loading}
-        style={{
-          marginTop: 16,
-          padding: "10px 16px",
-          fontSize: 16,
-        }}
+        style={{ marginTop: 16, padding: "10px 16px" }}
       >
         {loading ? "Generating..." : "Generate 5 Angle Prompt"}
       </button>
 
-      {error && (
-        <p style={{ color: "red", marginTop: 16 }}>{error}</p>
-      )}
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {prompts && (
-        <div style={{ marginTop: 24 }}>
-          {prompts.map((item, index) => (
-            <div
-              key={index}
-              style={{
-                border: "1px solid #ccc",
-                borderRadius: 8,
-                padding: 12,
-                marginBottom: 12,
-              }}
-            >
-              <strong>{item.angle}</strong>
-              <p style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>
-                {item.prompt}
-              </p>
-            </div>
-          ))}
-        </div>
+      {result && (
+        <pre
+          style={{
+            marginTop: 24,
+            background: "#f4f4f4",
+            padding: 16,
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {result}
+        </pre>
       )}
     </div>
   );
