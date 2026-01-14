@@ -1,52 +1,72 @@
-
 import { useState } from "react";
 
 export default function Home() {
-  const [prompt, setPrompt] = useState("");
-  const [output, setOutput] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [kategori, setKategori] = useState("Fashion");
+  const [model, setModel] = useState("Tanpa Model (Produk Sahaja)");
+  const [latar, setLatar] = useState("Studio Foto Minimalis");
+  const [vibe, setVibe] = useState("Aesthetic");
+  const [angle, setAngle] = useState("Full Body / Wide Shot");
+  const [ratio, setRatio] = useState("9:16");
 
-  async function generate() {
-    setError("");
-    setOutput("");
+  const Card = ({ children }: any) => (
+    <div
+      style={{
+        background: "#ffffff",
+        borderRadius: 18,
+        padding: 18,
+        marginBottom: 18,
+        boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+      }}
+    >
+      {children}
+    </div>
+  );
 
-    if (!prompt.trim()) {
-      setError("Prompt kosong");
-      return;
-    }
+  const Select = ({ value, set, options }: any) => (
+    <select
+      value={value}
+      onChange={(e) => set(e.target.value)}
+      style={{
+        width: "100%",
+        padding: 12,
+        borderRadius: 12,
+        border: "1px solid #e5e7eb",
+        fontSize: 14,
+      }}
+    >
+      {options.map((o: string) => (
+        <option key={o}>{o}</option>
+      ))}
+    </select>
+  );
 
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/prompt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data?.error || "Ralat tidak diketahui");
-      } else {
-        setOutput(data.result);
-      }
-    } catch (e: any) {
-      setError("Client error: " + e.message);
-    }
-
-    setLoading(false);
-  }
+  const KategoriBtn = ({ nama }: any) => (
+    <button
+      onClick={() => setKategori(nama)}
+      style={{
+        padding: 12,
+        borderRadius: 14,
+        fontSize: 13,
+        fontWeight: 600,
+        border:
+          kategori === nama
+            ? "2px solid #ec4899"
+            : "1px solid #e5e7eb",
+        background: kategori === nama ? "#fff0f6" : "#ffffff",
+      }}
+    >
+      {nama}
+    </button>
+  );
 
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: "#f5f6fa",
+        background: "#f4f5f7",
+        padding: "12px 10px",
         display: "flex",
         justifyContent: "center",
-        padding: "12px 10px",
       }}
     >
       <div style={{ width: "100%", maxWidth: 420 }}>
@@ -54,114 +74,187 @@ export default function Home() {
         <h1
           style={{
             textAlign: "center",
-            marginBottom: 14,
-            fontSize: "22px",
+            fontSize: 22,
             fontWeight: 700,
+            marginBottom: 6,
+            color: "#4f46e5",
             whiteSpace: "nowrap",
           }}
         >
-          ✨ AI Magic Affiliate Prompt
+          👋 AI Affiliate POV Studio
         </h1>
-
-        {/* CARD */}
-        <div
+        <p
           style={{
-            background: "#ffffff",
-            borderRadius: 18,
-            padding: 18,
-            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+            textAlign: "center",
+            fontSize: 13,
+            color: "#6b7280",
+            marginBottom: 18,
           }}
         >
-          {/* STEP 1 */}
-          <div style={{ marginBottom: 18 }}>
-            <h4 style={{ marginBottom: 8 }}>1️⃣ Idea Produk</h4>
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Contoh: wanita jual baju di pasar"
-              style={{
-                width: "100%",
-                minHeight: 90,
-                padding: 12,
-                borderRadius: 12,
-                border: "1px solid #e5e7eb",
-                fontSize: 14,
-                outline: "none",
-              }}
-            />
+          Gabungkan foto produk & latar belakang menjadi konten POV affiliate
+          yang estetik
+        </p>
+
+        {/* STEP 1 */}
+        <Card>
+          <h4>1️⃣ Upload Produk</h4>
+          <div
+            style={{
+              marginTop: 10,
+              padding: 18,
+              borderRadius: 14,
+              border: "2px dashed #ec4899",
+              textAlign: "center",
+              fontSize: 13,
+              color: "#555",
+            }}
+          >
+            Klik atau seret foto produk di sini  
+            <br />
+            Format JPG / PNG (Dummy UI)
           </div>
 
-          {/* STEP 2 */}
-          <div style={{ marginBottom: 18 }}>
-            <h4 style={{ marginBottom: 8 }}>2️⃣ Gaya & Scene</h4>
-            <div
-              style={{
-                padding: 12,
-                borderRadius: 12,
-                background: "#f9fafb",
-                fontSize: 13,
-                color: "#555",
-              }}
-            >
-              Automatic (AI akan pilih angle & gaya terbaik)
-            </div>
+          <h5 style={{ marginTop: 16 }}>Kategori Produk</h5>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 10,
+              marginTop: 10,
+            }}
+          >
+            <KategoriBtn nama="Fashion" />
+            <KategoriBtn nama="Aksesori & Beg" />
+            <KategoriBtn nama="Makanan & Minuman" />
+            <KategoriBtn nama="Lain-lain" />
           </div>
+        </Card>
 
-          {/* STEP 3 */}
-          <div style={{ marginBottom: 20 }}>
-            <h4 style={{ marginBottom: 10 }}>3️⃣ Generate</h4>
-            <button
-              onClick={generate}
-              disabled={loading}
-              style={{
-                width: "100%",
-                padding: 14,
-                borderRadius: 14,
-                border: "none",
-                color: "#fff",
-                fontWeight: 600,
-                fontSize: 15,
-                cursor: loading ? "not-allowed" : "pointer",
-                background:
-                  "linear-gradient(135deg, #ec4899, #8b5cf6)",
-              }}
-            >
-              {loading ? "Menjana..." : "✨ Generate Magic"}
-            </button>
+        {/* STEP 2 */}
+        <Card>
+          <h4>2️⃣ Tetapan Scene</h4>
+          <p style={{ fontSize: 13 }}>Pilih Model</p>
+          <Select
+            value={model}
+            set={setModel}
+            options={[
+              "Tanpa Model (Produk Sahaja)",
+              "Wanita Tidak Berhijab",
+              "Wanita Berhijab",
+              "Lelaki",
+              "Kanak-kanak Perempuan",
+              "Kanak-kanak Lelaki",
+            ]}
+          />
+        </Card>
+
+        {/* STEP 3 */}
+        <Card>
+          <h4>3️⃣ Gaya & Styling</h4>
+
+          <p style={{ fontSize: 13 }}>Pilih Latar Scene</p>
+          <Select
+            value={latar}
+            set={setLatar}
+            options={[
+              "Studio Foto Minimalis",
+              "Jalanan Bandar (Street Style)",
+              "Kafe Outdoor",
+              "Pantai",
+              "Taman Bunga",
+              "Bilik Tidur",
+              "Perpustakaan",
+              "Seni Bina Moden",
+              "Pergunungan",
+              "Pejabat (Office Style)",
+              "Dalam Pusat Beli-belah",
+            ]}
+          />
+
+          <p style={{ fontSize: 13, marginTop: 12 }}>Pilih Vibe</p>
+          <Select
+            value={vibe}
+            set={setVibe}
+            options={[
+              "Aesthetic",
+              "Minimalis",
+              "Berwarna-warni",
+              "Pastel Dreamy",
+              "Futuristik",
+              "Vintage",
+              "Moden Mewah",
+              "Cozy / Hangat",
+              "Dark Academia",
+              "Natural",
+              "Tenang & Lembut",
+            ]}
+          />
+
+          <p style={{ fontSize: 13, marginTop: 12 }}>Pilih Sudut Kamera</p>
+          <Select
+            value={angle}
+            set={setAngle}
+            options={[
+              "Close Up",
+              "Medium Shot",
+              "Full Body / Wide Shot",
+              "High Angle",
+              "Low Angle",
+              "Over The Shoulder",
+              "Dutch Angle (Artistik)",
+            ]}
+          />
+
+          <p style={{ fontSize: 13, marginTop: 12 }}>Nisbah Gambar</p>
+          <div style={{ display: "flex", gap: 10 }}>
+            {["9:16", "1:1", "3:4"].map((r) => (
+              <button
+                key={r}
+                onClick={() => setRatio(r)}
+                style={{
+                  flex: 1,
+                  padding: 10,
+                  borderRadius: 12,
+                  border:
+                    ratio === r
+                      ? "2px solid #ec4899"
+                      : "1px solid #e5e7eb",
+                  background: ratio === r ? "#fff0f6" : "#fff",
+                  fontWeight: 600,
+                }}
+              >
+                {r}
+              </button>
+            ))}
           </div>
+        </Card>
 
-          {/* ERROR */}
-          {error && (
-            <div
-              style={{
-                background: "#fee2e2",
-                color: "#b91c1c",
-                padding: 12,
-                borderRadius: 10,
-                fontSize: 13,
-              }}
-            >
-              ❌ {error}
-            </div>
-          )}
+        {/* GENERATE */}
+        <Card>
+          <button
+            style={{
+              width: "100%",
+              padding: 14,
+              borderRadius: 16,
+              border: "none",
+              color: "#fff",
+              fontSize: 15,
+              fontWeight: 700,
+              background:
+                "linear-gradient(135deg, #ec4899, #8b5cf6)",
+            }}
+          >
+            ✨ GENERATE MAGIC
+          </button>
+        </Card>
 
-          {/* OUTPUT */}
-          {output && (
-            <pre
-              style={{
-                marginTop: 16,
-                background: "#f3f4f6",
-                padding: 14,
-                borderRadius: 12,
-                whiteSpace: "pre-wrap",
-                fontSize: 13,
-                lineHeight: 1.6,
-              }}
-            >
-              {output}
-            </pre>
-          )}
-        </div>
+        {/* HASIL */}
+        <Card>
+          <h4>✨ Hasil Studio</h4>
+          <p style={{ fontSize: 13, color: "#6b7280" }}>
+            Kandungan AI akan dipaparkan di sini (dummy preview)
+          </p>
+        </Card>
       </div>
     </div>
   );
