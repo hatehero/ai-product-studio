@@ -2,13 +2,13 @@ import { useState } from "react";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
-  const [result, setResult] = useState("");
+  const [result, setResult] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const generate = async () => {
     setError("");
-    setResult("");
+    setResult([]);
 
     if (!prompt.trim()) {
       setError("Prompt kosong");
@@ -27,64 +27,51 @@ export default function Home() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Gagal generate");
-      } else {
-        setResult(data.result);
+        throw new Error(data.error || "API error");
       }
-    } catch {
-      setError("Tidak dapat hubungi server");
+
+      setResult(data.angles);
+    } catch (err: any) {
+      setError(err.message || "Gagal jana prompt");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main
-      style={{
-        maxWidth: 720,
-        margin: "40px auto",
-        padding: 20,
-        fontFamily: "serif",
-      }}
-    >
+    <main style={{ maxWidth: 600, margin: "40px auto", fontFamily: "serif" }}>
       <h1>📸 AI Prompt Studio</h1>
 
       <textarea
-        rows={6}
-        placeholder="Contoh: wanita jual jam premium di studio putih"
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
-        style={{ width: "100%", padding: 12 }}
+        placeholder="Contoh: wanita jual jam di pasar"
+        style={{ width: "100%", height: 120, padding: 10 }}
       />
 
       <button
         onClick={generate}
         disabled={loading}
-        style={{
-          marginTop: 12,
-          padding: "12px 20px",
-          width: "100%",
-          cursor: "pointer",
-        }}
+        style={{ marginTop: 10, padding: 10, width: "100%" }}
       >
-        {loading ? "Generating..." : "Generate 5 Angle Prompt"}
+        {loading ? "Menjana..." : "Generate 5 Angle Prompt"}
       </button>
 
       {error && (
-        <p style={{ color: "red", marginTop: 16 }}>❌ {error}</p>
+        <p style={{ color: "red", marginTop: 15 }}>❌ {error}</p>
       )}
 
-      {result && (
-        <pre
-          style={{
-            marginTop: 20,
-            padding: 16,
-            background: "#f5f5f5",
-            whiteSpace: "pre-wrap",
-          }}
-        >
-{result}
-        </pre>
+      {result.length > 0 && (
+        <div style={{ marginTop: 20 }}>
+          <h3>Hasil Prompt:</h3>
+          <ol>
+            {result.map((r, i) => (
+              <li key={i} style={{ marginBottom: 10 }}>
+                {r}
+              </li>
+            ))}
+          </ol>
+        </div>
       )}
     </main>
   );
