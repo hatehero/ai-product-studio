@@ -8,7 +8,7 @@ export default function Home() {
   const [angle, setAngle] = useState("Full Body / Wide Shot");
   const [ratio, setRatio] = useState("9:16");
 
-  const Card = ({ children }: { children: React.ReactNode }) => (
+  const Card = ({ children }: { children: any }) => (
     <div
       style={{
         background: "#ffffff",
@@ -43,9 +43,7 @@ export default function Home() {
       }}
     >
       {options.map((o) => (
-        <option key={o} value={o}>
-          {o}
-        </option>
+        <option key={o}>{o}</option>
       ))}
     </select>
   );
@@ -80,7 +78,6 @@ export default function Home() {
       }}
     >
       <div style={{ width: "100%", maxWidth: 420 }}>
-        {/* HEADER */}
         <h1
           style={{
             textAlign: "center",
@@ -106,7 +103,6 @@ export default function Home() {
           yang estetik
         </p>
 
-        {/* STEP 1 */}
         <Card>
           <h4>1️⃣ Upload Produk</h4>
           <div
@@ -117,12 +113,11 @@ export default function Home() {
               border: "2px dashed #ec4899",
               textAlign: "center",
               fontSize: 13,
-              color: "#555",
             }}
           >
             Klik atau seret foto produk di sini
             <br />
-            Format JPG / PNG (Dummy UI)
+            JPG / PNG (Dummy)
           </div>
 
           <h5 style={{ marginTop: 16 }}>Kategori Produk</h5>
@@ -131,7 +126,6 @@ export default function Home() {
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
               gap: 10,
-              marginTop: 10,
             }}
           >
             <KategoriBtn nama="Fashion" />
@@ -141,10 +135,8 @@ export default function Home() {
           </div>
         </Card>
 
-        {/* STEP 2 */}
         <Card>
           <h4>2️⃣ Tetapan Scene</h4>
-          <p style={{ fontSize: 13 }}>Pilih Model</p>
           <Select
             value={model}
             set={setModel}
@@ -159,88 +151,42 @@ export default function Home() {
           />
         </Card>
 
-        {/* STEP 3 */}
         <Card>
           <h4>3️⃣ Gaya & Styling</h4>
-
-          <p style={{ fontSize: 13 }}>Pilih Latar Scene</p>
           <Select
             value={latar}
             set={setLatar}
             options={[
               "Studio Foto Minimalis",
-              "Jalanan Bandar (Street Style)",
+              "Jalanan Bandar",
               "Kafe Outdoor",
               "Pantai",
-              "Taman Bunga",
               "Bilik Tidur",
-              "Perpustakaan",
-              "Seni Bina Moden",
-              "Pergunungan",
-              "Pejabat (Office Style)",
-              "Dalam Pusat Beli-belah",
             ]}
           />
 
-          <p style={{ fontSize: 13, marginTop: 12 }}>Pilih Vibe</p>
           <Select
             value={vibe}
             set={setVibe}
             options={[
               "Aesthetic",
               "Minimalis",
-              "Berwarna-warni",
-              "Pastel Dreamy",
-              "Futuristik",
               "Vintage",
               "Moden Mewah",
-              "Cozy / Hangat",
-              "Dark Academia",
-              "Natural",
-              "Tenang & Lembut",
             ]}
           />
 
-          <p style={{ fontSize: 13, marginTop: 12 }}>Pilih Sudut Kamera</p>
           <Select
             value={angle}
             set={setAngle}
             options={[
               "Close Up",
               "Medium Shot",
-              "Full Body / Wide Shot",
-              "High Angle",
-              "Low Angle",
-              "Over The Shoulder",
-              "Dutch Angle (Artistik)",
+              "Wide Shot",
             ]}
           />
-
-          <p style={{ fontSize: 13, marginTop: 12 }}>Nisbah Gambar</p>
-          <div style={{ display: "flex", gap: 10 }}>
-            {["9:16", "1:1", "3:4"].map((r) => (
-              <button
-                key={r}
-                onClick={() => setRatio(r)}
-                style={{
-                  flex: 1,
-                  padding: 10,
-                  borderRadius: 12,
-                  border:
-                    ratio === r
-                      ? "2px solid #ec4899"
-                      : "1px solid #e5e7eb",
-                  background: ratio === r ? "#fff0f6" : "#fff",
-                  fontWeight: 600,
-                }}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
         </Card>
 
-        {/* GENERATE */}
         <Card>
           <button
             style={{
@@ -249,22 +195,13 @@ export default function Home() {
               borderRadius: 16,
               border: "none",
               color: "#fff",
-              fontSize: 15,
               fontWeight: 700,
               background:
-                "linear-gradient(135deg, #ec4899, #8b5cf6)",
+                "linear-gradient(135deg,#ec4899,#8b5cf6)",
             }}
           >
             ✨ GENERATE MAGIC
           </button>
-        </Card>
-
-        {/* HASIL */}
-        <Card>
-          <h4>✨ Hasil Studio</h4>
-          <p style={{ fontSize: 13, color: "#6b7280" }}>
-            Kandungan AI akan dipaparkan di sini (dummy preview)
-          </p>
         </Card>
       </div>
     </div>
