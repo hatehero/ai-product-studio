@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 
 export default function Home() {
@@ -45,27 +46,35 @@ export default function Home() {
         background: "#f5f6fa",
         display: "flex",
         justifyContent: "center",
-        padding: 16,
+        padding: "12px 10px",
       }}
     >
       <div style={{ width: "100%", maxWidth: 420 }}>
         {/* HEADER */}
-        <h2 style={{ textAlign: "center", marginBottom: 16 }}>
-          ✨ AI Magic Affiliate Prompt ✨
-        </h2>
+        <h1
+          style={{
+            textAlign: "center",
+            marginBottom: 14,
+            fontSize: "22px",
+            fontWeight: 700,
+            whiteSpace: "nowrap",
+          }}
+        >
+          ✨ AI Magic Affiliate Prompt
+        </h1>
 
         {/* CARD */}
         <div
           style={{
             background: "#ffffff",
-            borderRadius: 20,
-            padding: 20,
+            borderRadius: 18,
+            padding: 18,
             boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
           }}
         >
           {/* STEP 1 */}
-          <div style={{ marginBottom: 20 }}>
-            <h4>1️⃣ Idea Produk</h4>
+          <div style={{ marginBottom: 18 }}>
+            <h4 style={{ marginBottom: 8 }}>1️⃣ Idea Produk</h4>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -77,13 +86,14 @@ export default function Home() {
                 borderRadius: 12,
                 border: "1px solid #e5e7eb",
                 fontSize: 14,
+                outline: "none",
               }}
             />
           </div>
 
           {/* STEP 2 */}
-          <div style={{ marginBottom: 20 }}>
-            <h4>2️⃣ Gaya & Scene</h4>
+          <div style={{ marginBottom: 18 }}>
+            <h4 style={{ marginBottom: 8 }}>2️⃣ Gaya & Scene</h4>
             <div
               style={{
                 padding: 12,
@@ -98,8 +108,8 @@ export default function Home() {
           </div>
 
           {/* STEP 3 */}
-          <div style={{ marginBottom: 24 }}>
-            <h4>3️⃣ Generate</h4>
+          <div style={{ marginBottom: 20 }}>
+            <h4 style={{ marginBottom: 10 }}>3️⃣ Generate</h4>
             <button
               onClick={generate}
               disabled={loading}
