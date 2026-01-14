@@ -51,7 +51,7 @@ export default function Home() {
       <div style={{ width: "100%", maxWidth: 420 }}>
         {/* HEADER */}
         <h2 style={{ textAlign: "center", marginBottom: 16 }}>
-          ✨ AI Product Studio
+          ✨ AI Magic Affiliate Prompt ✨
         </h2>
 
         {/* CARD */}
