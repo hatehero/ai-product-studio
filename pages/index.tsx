@@ -8,7 +8,7 @@ export default function Home() {
   const [angle, setAngle] = useState("Full Body / Wide Shot");
   const [ratio, setRatio] = useState("9:16");
 
-  const Card = ({ children }: any) => (
+  const Card = ({ children }: { children: React.ReactNode }) => (
     <div
       style={{
         background: "#ffffff",
@@ -22,7 +22,15 @@ export default function Home() {
     </div>
   );
 
-  const Select = ({ value, set, options }: any) => (
+  const Select = ({
+    value,
+    set,
+    options,
+  }: {
+    value: string;
+    set: (v: string) => void;
+    options: string[];
+  }) => (
     <select
       value={value}
       onChange={(e) => set(e.target.value)}
@@ -34,13 +42,15 @@ export default function Home() {
         fontSize: 14,
       }}
     >
-      {options.map((o: string) => (
-        <option key={o}>{o}</option>
+      {options.map((o) => (
+        <option key={o} value={o}>
+          {o}
+        </option>
       ))}
     </select>
   );
 
-  const KategoriBtn = ({ nama }: any) => (
+  const KategoriBtn = ({ nama }: { nama: string }) => (
     <button
       onClick={() => setKategori(nama)}
       style={{
@@ -83,6 +93,7 @@ export default function Home() {
         >
           👋 AI Affiliate POV Studio
         </h1>
+
         <p
           style={{
             textAlign: "center",
@@ -109,7 +120,7 @@ export default function Home() {
               color: "#555",
             }}
           >
-            Klik atau seret foto produk di sini  
+            Klik atau seret foto produk di sini
             <br />
             Format JPG / PNG (Dummy UI)
           </div>
