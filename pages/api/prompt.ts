@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 const HF_API_KEY = process.env.HF_API_KEY!;
-// ✅ Gunakan URL Inference API yang stabil
-const MODEL_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2";
+// ✅ URL Router yang betul untuk v1 chat completions
+const MODEL_URL = "https://router.huggingface.co/hf-inference/v1/chat/completions";
 
 async function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -17,43 +17,42 @@ async function callHF(userPrompt: string, retries = 5): Promise<string> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        inputs: `<s>[INST] Bina 5 prompt sudut kamera (camera angle) berbeza dalam Bahasa Inggeris untuk AI image generation berdasarkan tema ini: ${userPrompt}. Berikan senarai 1 hingga 5 sahaja tanpa ulasan tambahan. [/INST]`,
-        parameters: {
-          max_new_tokens: 500,
-          return_full_text: false, // Hanya ambil teks baru yang dijana
-        },
+        model: "mistralai/Mistral-7B-Instruct-v0.2",
+        messages: [
+          {
+            role: "user",
+            content: `Bina 5 prompt sudut kamera (camera angle) berbeza dalam Bahasa Inggeris untuk AI image generation berdasarkan tema ini: ${userPrompt}. Berikan senarai 1 hingga 5 sahaja.`
+          }
+        ],
+        max_tokens: 500,
+        stream: false
       }),
     });
 
-    // 1. Semak jika ralat bukan JSON (Not Found/Bad Gateway)
+    // Semak jika respons bukan 200 OK
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorData = await response.json().catch(() => ({ error: "Ralat tidak dikenali" }));
       
-      // Jika model sedang loading, buat percubaan semula (retry)
-      if (errorText.includes("loading") || response.status === 503) {
-        if (retries <= 0) throw new Error("Model masih dimuatkan oleh server. Sila cuba sebentar lagi.");
-        await sleep(10000); 
+      // Jika model sedang loading (Service Unavailable)
+      if (response.status === 503 || errorData.error?.includes("loading")) {
+        if (retries <= 0) throw new Error("Model masih loading di server Hugging Face.");
+        await sleep(10000); // Tunggu 10 saat
         return callHF(userPrompt, retries - 1);
       }
       
-      throw new Error(`API Error (${response.status}): ${errorText}`);
+      throw new Error(errorData.error?.message || errorData.error || `Ralat API: ${response.status}`);
     }
 
     const data = await response.json();
 
-    // 2. Ekstrak teks daripada array (Format standard Inference API)
-    if (Array.isArray(data) && data[0]?.generated_text) {
-      return data[0].generated_text.trim();
+    // ✅ Ekstrak mengikut format Chat Completion (Router standard)
+    if (data.choices && data.choices[0]?.message?.content) {
+      return data.choices[0].message.content.trim();
     }
 
-    // 3. Jika data adalah objek terus
-    if (data?.generated_text) {
-      return data.generated_text.trim();
-    }
-
-    throw new Error("Format respons tidak dikenali.");
+    throw new Error("Format respons tidak sah atau kosong.");
   } catch (error: any) {
-    throw new Error(error.message || "Ralat sambungan API");
+    throw new Error(error.message || "Gagal menghubungi API Hugging Face");
   }
 }
 
@@ -66,13 +65,12 @@ export default async function handler(
 
   const { prompt } = req.body;
   if (!prompt)
-    return res.status(400).json({ error: "Prompt tidak boleh kosong" });
+    return res.status(400).json({ error: "Sila masukkan tema" });
 
   try {
     const result = await callHF(prompt);
     res.status(200).json({ result });
   } catch (e: any) {
-    // Pastikan kita hantar mesej ralat yang bersih ke frontend
     res.status(500).json({ error: e.message });
   }
 }
