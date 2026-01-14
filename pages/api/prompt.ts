@@ -1,4 +1,3 @@
-
 import type { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
@@ -9,15 +8,15 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  const { idea } = req.body;
+
+  if (!idea) {
+    return res.status(400).json({ error: "Idea is required" });
+  }
+
   try {
-    const { product } = req.body;
-
-    if (!product) {
-      return res.status(400).json({ error: "Product name required" });
-    }
-
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" +
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" +
         process.env.GEMINI_API_KEY,
       {
         method: "POST",
@@ -30,20 +29,29 @@ export default async function handler(
               parts: [
                 {
                   text: `
-You are a professional product photographer.
-Generate ONE high-quality AI image prompt for this product:
+You are a professional AI prompt engineer.
 
-Product: ${product}
+User idea:
+"${idea}"
 
-The prompt must include:
-- studio lighting
-- clean background
-- commercial product photography
-- realistic, DSLR quality
-- e-commerce style
+TASK:
+Generate EXACTLY 5 different image prompts.
 
-Return ONLY the prompt text.
-                  `,
+RULES:
+- English only
+- Each prompt = different camera angle
+- Product / person same
+- Style: cinematic, realistic, commercial
+- Mention lighting + camera angle
+- Output as JSON array only
+- No explanation
+
+FORMAT:
+[
+  { "angle": "...", "prompt": "..." },
+  ...
+]
+`,
                 },
               ],
             },
@@ -55,15 +63,10 @@ Return ONLY the prompt text.
     const data = await response.json();
 
     const text =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    if (!text) {
-      return res.status(500).json({ error: "No prompt generated" });
-    }
-
-    res.status(200).json({ prompt: text.trim() });
+    return res.status(200).json({ result: text });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "AI prompt failed" });
+    return res.status(500).json({ error: "Gemini API failed" });
   }
 }
