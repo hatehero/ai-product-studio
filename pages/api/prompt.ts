@@ -11,7 +11,7 @@ export default async function handler(
   const { idea } = req.body;
 
   if (!idea) {
-    return res.status(400).json({ error: "Idea is required" });
+    return res.status(400).json({ error: "Idea kosong" });
   }
 
   try {
@@ -26,32 +26,34 @@ export default async function handler(
         body: JSON.stringify({
           contents: [
             {
+              role: "user",
               parts: [
                 {
                   text: `
-You are a professional AI prompt engineer.
+Anda adalah AI prompt engineer profesional.
 
-User idea:
+Tugas:
+Daripada IDEA berikut:
 "${idea}"
 
-TASK:
-Generate EXACTLY 5 different image prompts.
+Hasilkan 5 prompt visual BERBEZA untuk AI image/video.
 
-RULES:
-- English only
-- Each prompt = different camera angle
-- Product / person same
-- Style: cinematic, realistic, commercial
-- Mention lighting + camera angle
-- Output as JSON array only
-- No explanation
+Setiap prompt mesti:
+- Gaya realistic / cinematic
+- Sudut kamera berbeza
+- Sesuai untuk iklan / live jualan
+- Bahasa English (AI friendly)
 
-FORMAT:
+Format output JSON sahaja:
+
 [
-  { "angle": "...", "prompt": "..." },
-  ...
+  { "angle": "Angle 1", "prompt": "..." },
+  { "angle": "Angle 2", "prompt": "..." },
+  { "angle": "Angle 3", "prompt": "..." },
+  { "angle": "Angle 4", "prompt": "..." },
+  { "angle": "Angle 5", "prompt": "..." }
 ]
-`,
+                  `,
                 },
               ],
             },
@@ -63,10 +65,13 @@ FORMAT:
     const data = await response.json();
 
     const text =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      data.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
 
-    return res.status(200).json({ result: text });
+    const prompts = JSON.parse(text);
+
+    res.status(200).json({ prompts });
   } catch (err) {
-    return res.status(500).json({ error: "Gemini API failed" });
+    console.error(err);
+    res.status(500).json({ error: "Gagal generate prompt" });
   }
 }
