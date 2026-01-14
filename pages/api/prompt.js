@@ -1,16 +1,11 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({ error: "Method tidak dibenarkan" });
   }
 
   const { prompt } = req.body;
 
-  if (!prompt || prompt.trim().length === 0) {
+  if (!prompt || !prompt.trim()) {
     return res.status(400).json({ error: "Prompt kosong" });
   }
 
@@ -20,7 +15,9 @@ export default async function handler(
         process.env.GEMINI_API_KEY,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           contents: [
             {
@@ -43,19 +40,25 @@ Format jawapan:
 3. ...
 4. ...
 5. ...
-`
-                }
-              ]
-            }
-          ]
-        })
+`,
+                },
+              ],
+            },
+          ],
+        }),
       }
     );
 
     const data = await response.json();
 
     const text =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      data &&
+      data.candidates &&
+      data.candidates[0] &&
+      data.candidates[0].content &&
+      data.candidates[0].content.parts &&
+      data.candidates[0].content.parts[0] &&
+      data.candidates[0].content.parts[0].text;
 
     if (!text) {
       return res
@@ -64,7 +67,10 @@ Format jawapan:
     }
 
     return res.status(200).json({ result: text });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+  } catch (err) {
+    return res.status(500).json({
+      error: "Ralat server",
+      detail: err.message || "Unknown error",
+    });
   }
 }
