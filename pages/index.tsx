@@ -1,61 +1,80 @@
-import { useState } from "react";
+import type { NextApiRequest, NextApiResponse } from "next";
 
-export default function Home() {
-  const [idea, setIdea] = useState("");
-  const [result, setResult] = useState("");
-  const [loading, setLoading] = useState(false);
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-  const generatePrompt = async () => {
-    setLoading(true);
-    setResult("");
+  const { idea } = req.body;
 
-    const res = await fetch("/api/prompt", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idea }),
+  if (!idea) {
+    return res.status(400).json({ error: "Idea kosong" });
+  }
+
+  const API_KEY = process.env.GEMINI_API_KEY;
+
+  if (!API_KEY) {
+    return res.status(500).json({ error: "GEMINI_API_KEY tiada" });
+  }
+
+  try {
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: `
+Anda ialah AI pakar promosi produk.
+
+Daripada idea ringkas di bawah, hasilkan 5 PROMPT GAMBAR berbeza dengan ANGLE berbeza.
+
+IDEA:
+"${idea}"
+
+FORMAT JAWAPAN (WAJIB JSON SAHAJA):
+[
+  { "angle": "Angle 1 – ...", "prompt": "..." },
+  { "angle": "Angle 2 – ...", "prompt": "..." },
+  { "angle": "Angle 3 – ...", "prompt": "..." },
+  { "angle": "Angle 4 – ...", "prompt": "..." },
+  { "angle": "Angle 5 – ...", "prompt": "..." }
+]
+                  `,
+                },
+              ],
+            },
+          ],
+        }),
+      }
+    );
+
+    const geminiData = await geminiRes.json();
+
+    const text =
+      geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!text) {
+      throw new Error("Response Gemini kosong");
+    }
+
+    const prompts = JSON.parse(text);
+
+    return res.status(200).json({ prompts });
+  } catch (err: any) {
+    return res.status(500).json({
+      error: "Prompt generation failed",
+      detail: err.message,
     });
-
-    const data = await res.json();
-    setResult(data.result || "Failed");
-    setLoading(false);
-  };
-
-  return (
-    <main style={{ padding: 20, maxWidth: 700, margin: "auto" }}>
-      <h1>AI Product Prompt Studio</h1>
-
-      <textarea
-        placeholder="Contoh: akak melayu jual gelang dalam live"
-        value={idea}
-        onChange={(e) => setIdea(e.target.value)}
-        rows={4}
-        style={{ width: "100%", padding: 10 }}
-      />
-
-      <button
-        onClick={generatePrompt}
-        disabled={loading}
-        style={{
-          marginTop: 10,
-          padding: "10px 20px",
-          cursor: "pointer",
-        }}
-      >
-        {loading ? "Generating..." : "Generate 5 Angle Prompt"}
-      </button>
-
-      {result && (
-        <pre
-          style={{
-            whiteSpace: "pre-wrap",
-            marginTop: 20,
-            background: "#f4f4f4",
-            padding: 15,
-          }}
-        >
-          {result}
-        </pre>
-      )}
-    </main>
-  );
+  }
 }
