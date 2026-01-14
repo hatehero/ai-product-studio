@@ -1,74 +1,58 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-const HF_API_KEY = process.env.HF_API_KEY!;
-// ✅ URL Router yang betul untuk v1 chat completions
-const MODEL_URL = "https://router.huggingface.co/hf-inference/v1/chat/completions";
+// Masukkan API Key anda dalam .env.local sebagai GEMINI_API_KEY
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY!;
+const MODEL_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
-async function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-async function callHF(userPrompt: string, retries = 5): Promise<string> {
+async function callGemini(userPrompt: string): Promise<string> {
   try {
     const response = await fetch(MODEL_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${HF_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "mistralai/Mistral-7B-Instruct-v0.2",
-        messages: [
+        contents: [
           {
-            role: "user",
-            content: `Bina 5 prompt sudut kamera (camera angle) berbeza dalam Bahasa Inggeris untuk AI image generation berdasarkan tema ini: ${userPrompt}. Berikan senarai 1 hingga 5 sahaja.`
+            parts: [
+              {
+                text: `Bina 5 prompt sudut kamera (camera angle) berbeza dalam Bahasa Inggeris untuk AI image generation berdasarkan tema ini: ${userPrompt}. Berikan senarai nombor 1 hingga 5 sahaja.`
+              }
+            ]
           }
         ],
-        max_tokens: 500,
-        stream: false
+        generationConfig: {
+          maxOutputTokens: 500,
+          temperature: 0.7,
+        }
       }),
     });
 
-    // Semak jika respons bukan 200 OK
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: "Ralat tidak dikenali" }));
-      
-      // Jika model sedang loading (Service Unavailable)
-      if (response.status === 503 || errorData.error?.includes("loading")) {
-        if (retries <= 0) throw new Error("Model masih loading di server Hugging Face.");
-        await sleep(10000); // Tunggu 10 saat
-        return callHF(userPrompt, retries - 1);
-      }
-      
-      throw new Error(errorData.error?.message || errorData.error || `Ralat API: ${response.status}`);
-    }
-
     const data = await response.json();
 
-    // ✅ Ekstrak mengikut format Chat Completion (Router standard)
-    if (data.choices && data.choices[0]?.message?.content) {
-      return data.choices[0].message.content.trim();
+    if (!response.ok) {
+      throw new Error(data.error?.message || "Ralat API Gemini");
     }
 
-    throw new Error("Format respons tidak sah atau kosong.");
+    // Ekstrak teks daripada struktur respons Gemini
+    if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+      return data.candidates[0].content.parts[0].text.trim();
+    }
+
+    throw new Error("Gemini tidak memulangkan sebarang teks.");
   } catch (error: any) {
-    throw new Error(error.message || "Gagal menghubungi API Hugging Face");
+    throw new Error(error.message || "Gagal menghubungi Google AI Studio");
   }
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== "POST")
-    return res.status(405).json({ error: "Method not allowed" });
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const { prompt } = req.body;
-  if (!prompt)
-    return res.status(400).json({ error: "Sila masukkan tema" });
+  if (!prompt) return res.status(400).json({ error: "Prompt kosong" });
 
   try {
-    const result = await callHF(prompt);
+    const result = await callGemini(prompt);
     res.status(200).json({ result });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
