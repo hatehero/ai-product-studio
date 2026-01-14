@@ -8,76 +8,18 @@ export default function Home() {
   const [angle, setAngle] = useState("Full Body / Wide Shot");
   const [ratio, setRatio] = useState("9:16");
 
-  const Card = ({ children }: { children: any }) => (
-    <div
-      style={{
-        background: "#ffffff",
-        borderRadius: 18,
-        padding: 18,
-        marginBottom: 18,
-        boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-      }}
-    >
-      {children}
-    </div>
-  );
-
-  const Select = ({
-    value,
-    set,
-    options,
-  }: {
-    value: string;
-    set: (v: string) => void;
-    options: string[];
-  }) => (
-    <select
-      value={value}
-      onChange={(e) => set(e.target.value)}
-      style={{
-        width: "100%",
-        padding: 12,
-        borderRadius: 12,
-        border: "1px solid #e5e7eb",
-        fontSize: 14,
-      }}
-    >
-      {options.map((o) => (
-        <option key={o}>{o}</option>
-      ))}
-    </select>
-  );
-
-  const KategoriBtn = ({ nama }: { nama: string }) => (
-    <button
-      onClick={() => setKategori(nama)}
-      style={{
-        padding: 12,
-        borderRadius: 14,
-        fontSize: 13,
-        fontWeight: 600,
-        border:
-          kategori === nama
-            ? "2px solid #ec4899"
-            : "1px solid #e5e7eb",
-        background: kategori === nama ? "#fff0f6" : "#ffffff",
-      }}
-    >
-      {nama}
-    </button>
-  );
-
   return (
     <div
       style={{
         minHeight: "100vh",
         background: "#f4f5f7",
-        padding: "12px 10px",
+        padding: 12,
         display: "flex",
         justifyContent: "center",
       }}
     >
       <div style={{ width: "100%", maxWidth: 420 }}>
+        {/* HEADER */}
         <h1
           style={{
             textAlign: "center",
@@ -85,7 +27,6 @@ export default function Home() {
             fontWeight: 700,
             marginBottom: 6,
             color: "#4f46e5",
-            whiteSpace: "nowrap",
           }}
         >
           👋 AI Affiliate POV Studio
@@ -100,11 +41,20 @@ export default function Home() {
           }}
         >
           Gabungkan foto produk & latar belakang menjadi konten POV affiliate
-          yang estetik
         </p>
 
-        <Card>
+        {/* CARD */}
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 18,
+            padding: 18,
+            marginBottom: 18,
+            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+          }}
+        >
           <h4>1️⃣ Upload Produk</h4>
+
           <div
             style={{
               marginTop: 10,
@@ -115,12 +65,13 @@ export default function Home() {
               fontSize: 13,
             }}
           >
-            Klik atau seret foto produk di sini
+            Klik atau seret foto produk di sini  
             <br />
             JPG / PNG (Dummy)
           </div>
 
           <h5 style={{ marginTop: 16 }}>Kategori Produk</h5>
+
           <div
             style={{
               display: "grid",
@@ -128,66 +79,110 @@ export default function Home() {
               gap: 10,
             }}
           >
-            <KategoriBtn nama="Fashion" />
-            <KategoriBtn nama="Aksesori & Beg" />
-            <KategoriBtn nama="Makanan & Minuman" />
-            <KategoriBtn nama="Lain-lain" />
+            {["Fashion", "Aksesori & Beg", "Makanan & Minuman", "Lain-lain"].map(
+              (k) => (
+                <button
+                  key={k}
+                  onClick={() => setKategori(k)}
+                  style={{
+                    padding: 12,
+                    borderRadius: 14,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    border:
+                      kategori === k
+                        ? "2px solid #ec4899"
+                        : "1px solid #e5e7eb",
+                    background:
+                      kategori === k ? "#fff0f6" : "#ffffff",
+                  }}
+                >
+                  {k}
+                </button>
+              )
+            )}
           </div>
-        </Card>
+        </div>
 
-        <Card>
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 18,
+            padding: 18,
+            marginBottom: 18,
+            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+          }}
+        >
           <h4>2️⃣ Tetapan Scene</h4>
-          <Select
+
+          <select
             value={model}
-            set={setModel}
-            options={[
-              "Tanpa Model (Produk Sahaja)",
-              "Wanita Tidak Berhijab",
-              "Wanita Berhijab",
-              "Lelaki",
-              "Kanak-kanak Perempuan",
-              "Kanak-kanak Lelaki",
-            ]}
-          />
-        </Card>
+            onChange={(e) => setModel(e.target.value)}
+            style={{
+              width: "100%",
+              padding: 12,
+              borderRadius: 12,
+              border: "1px solid #e5e7eb",
+            }}
+          >
+            <option>Tanpa Model (Produk Sahaja)</option>
+            <option>Wanita Tidak Berhijab</option>
+            <option>Wanita Berhijab</option>
+            <option>Lelaki</option>
+          </select>
+        </div>
 
-        <Card>
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 18,
+            padding: 18,
+            marginBottom: 18,
+            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+          }}
+        >
           <h4>3️⃣ Gaya & Styling</h4>
-          <Select
+
+          <select
             value={latar}
-            set={setLatar}
-            options={[
-              "Studio Foto Minimalis",
-              "Jalanan Bandar",
-              "Kafe Outdoor",
-              "Pantai",
-              "Bilik Tidur",
-            ]}
-          />
+            onChange={(e) => setLatar(e.target.value)}
+            style={{ width: "100%", padding: 12, marginBottom: 10 }}
+          >
+            <option>Studio Foto Minimalis</option>
+            <option>Jalanan Bandar</option>
+            <option>Kafe Outdoor</option>
+            <option>Pantai</option>
+          </select>
 
-          <Select
+          <select
             value={vibe}
-            set={setVibe}
-            options={[
-              "Aesthetic",
-              "Minimalis",
-              "Vintage",
-              "Moden Mewah",
-            ]}
-          />
+            onChange={(e) => setVibe(e.target.value)}
+            style={{ width: "100%", padding: 12, marginBottom: 10 }}
+          >
+            <option>Aesthetic</option>
+            <option>Minimalis</option>
+            <option>Vintage</option>
+          </select>
 
-          <Select
+          <select
             value={angle}
-            set={setAngle}
-            options={[
-              "Close Up",
-              "Medium Shot",
-              "Wide Shot",
-            ]}
-          />
-        </Card>
+            onChange={(e) => setAngle(e.target.value)}
+            style={{ width: "100%", padding: 12 }}
+          >
+            <option>Full Body / Wide Shot</option>
+            <option>Close Up</option>
+            <option>Medium Shot</option>
+          </select>
+        </div>
 
-        <Card>
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 18,
+            padding: 18,
+            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+          }}
+        >
           <button
             style={{
               width: "100%",
@@ -202,7 +197,7 @@ export default function Home() {
           >
             ✨ GENERATE MAGIC
           </button>
-        </Card>
+        </div>
       </div>
     </div>
   );
