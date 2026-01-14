@@ -10,37 +10,42 @@ export default async function handler(
 
   try {
     const { input } = req.body;
-
     if (!input) {
       return res.status(400).json({ error: "Input kosong" });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: "API key tiada" });
+      return res.status(500).json({ error: "GEMINI_API_KEY tiada" });
     }
 
     const prompt = `
-Anda adalah AI prompt engineer.
-Tugas: hasilkan 5 prompt berbeza untuk AI image/video.
+Hasilkan 5 prompt visual untuk AI image/video.
 
 Tema: "${input}"
 
 Setiap prompt:
 - Sudut kamera berbeza
-- Sesuai untuk iklan / live jualan
+- Gaya live selling / iklan
 - Realistik
-- Ringkas tapi jelas
+- Ayat lengkap
 
-Format output JSON sahaja:
+Susun seperti ini:
 
-[
-  { "angle": "Angle 1", "prompt": "..." },
-  { "angle": "Angle 2", "prompt": "..." },
-  { "angle": "Angle 3", "prompt": "..." },
-  { "angle": "Angle 4", "prompt": "..." },
-  { "angle": "Angle 5", "prompt": "..." }
-]
+Angle 1:
+Prompt...
+
+Angle 2:
+Prompt...
+
+Angle 3:
+Prompt...
+
+Angle 4:
+Prompt...
+
+Angle 5:
+Prompt...
 `;
 
     const response = await fetch(
@@ -56,13 +61,15 @@ Format output JSON sahaja:
 
     const data = await response.json();
     const text =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    const parsed = JSON.parse(text);
+    if (!text) {
+      return res.status(500).json({ error: "Gemini tiada response" });
+    }
 
-    res.status(200).json({ prompts: parsed });
+    res.status(200).json({ result: text });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Prompt generation gagal" });
+    res.status(500).json({ error: "Server error" });
   }
 }
