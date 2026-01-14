@@ -1,80 +1,72 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import { useState } from "react";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+export default function Home() {
+  const [text, setText] = useState("");
+  const [result, setResult] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const { idea } = req.body;
+  const generate = async () => {
+    setLoading(true);
+    setError("");
+    setResult("");
 
-  if (!idea) {
-    return res.status(400).json({ error: "Idea kosong" });
-  }
-
-  const API_KEY = process.env.GEMINI_API_KEY;
-
-  if (!API_KEY) {
-    return res.status(500).json({ error: "GEMINI_API_KEY tiada" });
-  }
-
-  try {
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${API_KEY}`,
-      {
+    try {
+      const res = await fetch("/api/prompt", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [
-                {
-                  text: `
-Anda ialah AI pakar promosi produk.
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
 
-Daripada idea ringkas di bawah, hasilkan 5 PROMPT GAMBAR berbeza dengan ANGLE berbeza.
+      const data = await res.json();
 
-IDEA:
-"${idea}"
-
-FORMAT JAWAPAN (WAJIB JSON SAHAJA):
-[
-  { "angle": "Angle 1 – ...", "prompt": "..." },
-  { "angle": "Angle 2 – ...", "prompt": "..." },
-  { "angle": "Angle 3 – ...", "prompt": "..." },
-  { "angle": "Angle 4 – ...", "prompt": "..." },
-  { "angle": "Angle 5 – ...", "prompt": "..." }
-]
-                  `,
-                },
-              ],
-            },
-          ],
-        }),
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal");
       }
-    );
 
-    const geminiData = await geminiRes.json();
-
-    const text =
-      geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!text) {
-      throw new Error("Response Gemini kosong");
+      setResult(data.result);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const prompts = JSON.parse(text);
+  return (
+    <div style={{ padding: 24, maxWidth: 600, margin: "0 auto" }}>
+      <h1>AI Product Prompt Studio</h1>
 
-    return res.status(200).json({ prompts });
-  } catch (err: any) {
-    return res.status(500).json({
-      error: "Prompt generation failed",
-      detail: err.message,
-    });
-  }
+      <textarea
+        placeholder="Contoh: akak jual tudung dalam live"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        style={{ width: "100%", height: 120, padding: 12 }}
+      />
+
+      <button
+        onClick={generate}
+        disabled={loading}
+        style={{ marginTop: 12, padding: 10, width: "100%" }}
+      >
+        {loading ? "Generating..." : "Generate 5 Angle Prompt"}
+      </button>
+
+      {error && (
+        <p style={{ color: "red", marginTop: 12 }}>❌ {error}</p>
+      )}
+
+      {result && (
+        <pre
+          style={{
+            whiteSpace: "pre-wrap",
+            marginTop: 16,
+            background: "#f5f5f5",
+            padding: 12
+          }}
+        >
+          {result}
+        </pre>
+      )}
+    </div>
+  );
 }
