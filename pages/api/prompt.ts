@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY!;
-// ✅ Gunakan URL v1 (bukan v1beta) untuk kestabilan, dan pastikan nama model tepat
+// ✅ PEMBETULAN: Menggunakan versi v1 (bukan v1beta) untuk mengelakkan ralat "model not found"
 const MODEL_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 async function callGemini(userPrompt: string): Promise<string> {
@@ -16,7 +16,7 @@ async function callGemini(userPrompt: string): Promise<string> {
           {
             parts: [
               {
-                text: `Bina 5 prompt sudut kamera (camera angle) berbeza dalam Bahasa Inggeris untuk AI image generation berdasarkan tema ini: ${userPrompt}. Berikan senarai nombor 1 hingga 5 sahaja.`
+                text: `You are an AI Image Prompt Expert. Based on this theme: "${userPrompt}", generate 5 professional camera angle prompts for AI image generation. Provide only a numbered list from 1 to 5 in English.`
               }
             ]
           }
@@ -31,7 +31,6 @@ async function callGemini(userPrompt: string): Promise<string> {
     const data = await response.json();
 
     if (!response.ok) {
-      // Jika masih ralat, kita paparkan mesej dari Google untuk debug
       throw new Error(data.error?.message || `Ralat API: ${response.status}`);
     }
 
@@ -39,7 +38,7 @@ async function callGemini(userPrompt: string): Promise<string> {
       return data.candidates[0].content.parts[0].text.trim();
     }
 
-    throw new Error("Gemini tidak memberikan jawapan.");
+    throw new Error("Tiada teks diterima daripada Gemini.");
   } catch (error: any) {
     throw new Error(error.message || "Gagal menghubungi Google AI Studio");
   }
