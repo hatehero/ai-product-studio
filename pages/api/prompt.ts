@@ -1,81 +1,73 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+const HF_API_KEY = process.env.HF_API_KEY!;
+const MODEL_URL =
+  "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2";
 
-  const { idea } = req.body;
+async function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
-  if (!idea || idea.trim().length < 3) {
-    return res.status(400).json({ error: "Idea terlalu pendek" });
-  }
+async function callHF(prompt: string, retries = 5): Promise<string> {
+  const res = await fetch(MODEL_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${HF_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      inputs: `
+Bina 5 prompt sudut kamera berbeza untuk AI image generation.
+Tema: ${prompt}
 
-  try {
-    const hfRes = await fetch(
-      "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.HF_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          inputs: `
-Hasilkan 5 prompt visual berbeza (angle berbeza) untuk tujuan AI gambar/video.
-
-Idea:
-"${idea}"
-
-Format WAJIB:
+Format:
 1. Angle 1: ...
 2. Angle 2: ...
 3. Angle 3: ...
 4. Angle 4: ...
 5. Angle 5: ...
-
-Gaya: marketing, realistik, sesuai untuk AI image/video.
 `,
-          parameters: {
-            max_new_tokens: 250,
-            temperature: 0.8,
-            top_p: 0.95,
-            do_sample: true,
-          },
-        }),
-      }
-    );
+    }),
+  });
 
-    const data = await hfRes.json();
+  const data = await res.json();
 
-    // HANDLE SEMUA KES HF
-    if (data.error) {
-      return res.status(503).json({
-        error: "Model sedang loading. Cuba lagi.",
-        raw: data,
-      });
-    }
+  // ⏳ MODEL SEDANG LOADING
+  if (data?.error && data.error.includes("loading")) {
+    if (retries <= 0) throw new Error("Model masih loading");
+    await sleep(5000); // tunggu 5 saat
+    return callHF(prompt, retries - 1);
+  }
 
-    const text =
-      Array.isArray(data) && data[0]?.generated_text
-        ? data[0].generated_text
-        : null;
+  // ⏳ MODEL BAGI ETA
+  if (data?.estimated_time) {
+    await sleep((data.estimated_time + 2) * 1000);
+    return callHF(prompt, retries - 1);
+  }
 
-    if (!text) {
-      return res.status(500).json({
-        error: "Hugging Face balas kosong",
-        raw: data,
-      });
-    }
+  // ✅ RESPONSE OK
+  if (Array.isArray(data) && data[0]?.generated_text) {
+    return data[0].generated_text;
+  }
 
-    res.status(200).json({ result: text });
-  } catch (err: any) {
-    res.status(500).json({
-      error: "Gagal hubungi Hugging Face",
-      message: err.message,
-    });
+  throw new Error("HF tidak pulangkan teks");
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== "POST")
+    return res.status(405).json({ error: "Method not allowed" });
+
+  const { prompt } = req.body;
+  if (!prompt)
+    return res.status(400).json({ error: "Prompt kosong" });
+
+  try {
+    const result = await callHF(prompt);
+    res.status(200).json({ result });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
   }
 }
