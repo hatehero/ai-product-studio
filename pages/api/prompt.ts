@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY!;
-// ✅ PEMBETULAN: Menggunakan versi v1 (bukan v1beta) untuk mengelakkan ralat "model not found"
+// ✅ PEMBETULAN: Menggunakan versi /v1/ yang stabil untuk gemini-1.5-flash
 const MODEL_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 async function callGemini(userPrompt: string): Promise<string> {
@@ -16,7 +16,9 @@ async function callGemini(userPrompt: string): Promise<string> {
           {
             parts: [
               {
-                text: `You are an AI Image Prompt Expert. Based on this theme: "${userPrompt}", generate 5 professional camera angle prompts for AI image generation. Provide only a numbered list from 1 to 5 in English.`
+                text: `You are an expert AI Image Prompt Engineer. 
+                Based on this product theme: "${userPrompt}", generate 5 professional camera angle prompts for AI image generation. 
+                Provide only the numbered list 1 to 5 in English.`
               }
             ]
           }
@@ -30,15 +32,17 @@ async function callGemini(userPrompt: string): Promise<string> {
 
     const data = await response.json();
 
+    // Semak ralat daripada Google
     if (!response.ok) {
       throw new Error(data.error?.message || `Ralat API: ${response.status}`);
     }
 
+    // Ekstrak hasil teks daripada struktur respons Google Gemini
     if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
       return data.candidates[0].content.parts[0].text.trim();
     }
 
-    throw new Error("Tiada teks diterima daripada Gemini.");
+    throw new Error("Gemini tidak memulangkan sebarang teks.");
   } catch (error: any) {
     throw new Error(error.message || "Gagal menghubungi Google AI Studio");
   }
@@ -54,6 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const result = await callGemini(prompt);
     res.status(200).json({ result });
   } catch (e: any) {
+    // Mesej ralat akan dipaparkan pada skrin UI anda
     res.status(500).json({ error: e.message });
   }
 }
