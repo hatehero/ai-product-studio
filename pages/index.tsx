@@ -1,12 +1,12 @@
 import { useState } from "react";
 
 export default function Home() {
-  const [text, setText] = useState("");
+  const [idea, setIdea] = useState("");
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const generate = async () => {
+  const generatePrompt = async () => {
     setLoading(true);
     setError("");
     setResult("");
@@ -15,58 +15,74 @@ export default function Home() {
       const res = await fetch("/api/prompt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ idea }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Gagal");
+        throw new Error(data.error || "Gagal generate");
       }
 
       setResult(data.result);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 600, margin: "0 auto" }}>
-      <h1>AI Product Prompt Studio</h1>
-
-      <textarea
-        placeholder="Contoh: akak jual tudung dalam live"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        style={{ width: "100%", height: 120, padding: 12 }}
-      />
-
-      <button
-        onClick={generate}
-        disabled={loading}
-        style={{ marginTop: 12, padding: 10, width: "100%" }}
+    <div style={{ minHeight: "100vh", padding: 24, background: "#f5f5f5" }}>
+      <div
+        style={{
+          maxWidth: 600,
+          margin: "0 auto",
+          background: "#fff",
+          padding: 24,
+          borderRadius: 12,
+        }}
       >
-        {loading ? "Generating..." : "Generate 5 Angle Prompt"}
-      </button>
+        <h1>AI Product Prompt Studio</h1>
 
-      {error && (
-        <p style={{ color: "red", marginTop: 12 }}>❌ {error}</p>
-      )}
+        <textarea
+          placeholder="Contoh: akak buat live jual tudung"
+          value={idea}
+          onChange={(e) => setIdea(e.target.value)}
+          style={{ width: "100%", height: 120, padding: 12 }}
+        />
 
-      {result && (
-        <pre
+        <button
+          onClick={generatePrompt}
+          disabled={loading}
           style={{
-            whiteSpace: "pre-wrap",
-            marginTop: 16,
-            background: "#f5f5f5",
-            padding: 12
+            marginTop: 12,
+            width: "100%",
+            padding: 12,
+            fontWeight: "bold",
           }}
         >
-          {result}
-        </pre>
-      )}
+          {loading ? "Generate..." : "Generate 5 Angle Prompt"}
+        </button>
+
+        {error && (
+          <div style={{ marginTop: 12, color: "red" }}>❌ {error}</div>
+        )}
+
+        {result && (
+          <pre
+            style={{
+              marginTop: 16,
+              whiteSpace: "pre-wrap",
+              background: "#eee",
+              padding: 12,
+              borderRadius: 8,
+            }}
+          >
+            {result}
+          </pre>
+        )}
+      </div>
     </div>
   );
 }
