@@ -1,32 +1,32 @@
 import { useState } from "react";
 
 export default function App() {
-  const [prompt, setPrompt] = useState("");
-  const [image, setImage] = useState<string | null>(null);
+  const [idea, setIdea] = useState("");
+  const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const generateImage = async () => {
+  const generatePrompt = async () => {
     setLoading(true);
     setError("");
-    setImage(null);
+    setResult("");
 
     try {
-      const res = await fetch("/api/generate", {
+      const res = await fetch("/api/prompt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ idea }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Gagal generate");
+        throw new Error(data.error || "Gagal jana prompt");
       }
 
-      setImage(data.image);
+      setResult(data.result);
     } catch (e: any) {
-      setError("Gagal generate gambar");
+      setError("Gagal jana prompt AI");
     } finally {
       setLoading(false);
     }
@@ -48,17 +48,17 @@ export default function App() {
           background: "#fff",
           padding: 24,
           borderRadius: 16,
-          maxWidth: 420,
+          maxWidth: 500,
           width: "100%",
           boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
         }}
       >
-        <h1 style={{ textAlign: "center" }}>AI Product Studio</h1>
+        <h1 style={{ textAlign: "center" }}>AI Product Prompt Studio</h1>
 
         <textarea
-          placeholder="contoh: produk air gula, studio lighting, background putih, realistik"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="Contoh: akak melayu jual gelang dalam live"
+          value={idea}
+          onChange={(e) => setIdea(e.target.value)}
           style={{
             width: "100%",
             height: 100,
@@ -70,52 +70,42 @@ export default function App() {
         />
 
         <button
-          onClick={generateImage}
-          disabled={loading}
+          onClick={generatePrompt}
+          disabled={loading || !idea}
           style={{
             width: "100%",
             marginTop: 16,
             padding: 12,
             borderRadius: 10,
             border: "none",
-            color: "#fff",
-            fontSize: 16,
             cursor: "pointer",
-            background:
-              "linear-gradient(90deg, #ff5fcf 0%, #7b6cff 100%)",
+            background: "linear-gradient(90deg,#ff4ecd,#7c6cff)",
+            color: "#fff",
+            fontWeight: "bold",
           }}
         >
-          ✨ {loading ? "Generating..." : "Generate Magic"}
+          {loading ? "Generating..." : "✨ Generate 5 Angle Prompt"}
         </button>
 
         {error && (
-          <p style={{ color: "red", textAlign: "center", marginTop: 10 }}>
+          <p style={{ color: "red", marginTop: 12, textAlign: "center" }}>
             {error}
           </p>
         )}
 
-        {image && (
-          <img
-            src={image}
-            alt="AI Result"
+        {result && (
+          <pre
             style={{
-              width: "100%",
               marginTop: 16,
-              borderRadius: 12,
+              background: "#f4f4f4",
+              padding: 12,
+              borderRadius: 8,
+              whiteSpace: "pre-wrap",
             }}
-          />
+          >
+            {result}
+          </pre>
         )}
-
-        <p
-          style={{
-            textAlign: "center",
-            marginTop: 12,
-            fontSize: 12,
-            color: "#888",
-          }}
-        >
-          Powered by Hugging Face (SDXL)
-        </p>
       </div>
     </div>
   );
